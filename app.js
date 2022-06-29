@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import dayjs from 'dayjs';
 import bcrypt from 'bcrypt';
 import { v4 as uuid } from 'uuid';
-import { userSchema, newUserSchema,  entrySchema } from './validations.js';
+import { userSchema, newUserSchema, entrySchema } from './validations.js';
 
 const app = express();
 app.use(cors());
@@ -33,7 +33,25 @@ app.post('/signup',  async (req, res) => {
     } catch (err) {
         res.status(500).send('Preencha novamente os dados!')
     }
-})
+});
+
+app.post('/login', async (req, res) => {
+    const user = req.body;
+    const { error } = userSchema.validate(user);
+    if (error) {
+        return res.sendStatus(422);
+    }
+    try {
+        const oldUser = await db.collection('users').findOne({ email: user.email });
+        const checkPassword = bcrypt.compareSync(user.password, oldUser.password);
+        if (!oldUser || !checkPassword) {
+            return res.status(401).send('Email ou senha incorretos!')
+        }
+        res.status(201).send('Usuário logou com sucesso!');
+    } catch (err) {
+        res.status(500).send('Algo deu errado. Tente novamente!');
+    }
+});
 
 const PORT = process.env.PORT;
 app.listen(PORT);
