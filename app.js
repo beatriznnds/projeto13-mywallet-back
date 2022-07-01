@@ -43,15 +43,58 @@ app.post('/login', async (req, res) => {
     }
     try {
         const oldUser = await db.collection('users').findOne({ email: user.email });
+        console.log(oldUser._id)
         const checkPassword = bcrypt.compareSync(user.password, oldUser.password);
         if (!oldUser || !checkPassword) {
-            return res.status(401).send('Email ou senha incorretos!')
+            return res.status(404).send('Email ou senha incorretos!')
         }
+        const token = uuid();
+        await db.collection('onlineUsers').insertOne({ token, userId: new ObjectId(oldUser._id)});
         res.status(201).send('Usuário logou com sucesso!');
     } catch (err) {
         res.status(500).send('Algo deu errado. Tente novamente!');
     }
 });
+
+app.get('/entries', async (req, res) => {
+    const { authorization } = req.headers;
+    const token = authorization?.replace('Bearer', '');
+    try {
+        const offline = await db.collection('onlineUsers').findOne({ token });
+        if (offline) {
+            return res.sendStatus(401);
+        }
+        const entries = await db.collection('entries').find({ token }).toArray();
+        const reverseEntries = entries.reverse();
+        res.send(reverseEntries);
+    } catch (err) {
+        res.status(500).send('Algo deu errado. Tente novamente!');
+    }
+});
+
+app.post('/entries', async (req, res) => {
+    const entry = req.body;
+    const { authorization } = req.headers;
+    const token = authorization?.replace('Bearer', '');
+
+    const { error } = entrySchema.validate(entry);
+    if (error) {
+        return res.sendStatus(422);
+    }
+
+    try {
+        const offline = await db.collection('onlineUsers').findOne({ token });
+        if (offline) {
+            return res.sendStatus(401);
+        }
+        await db.collection('entries').insertOne({ token, value: entry.value, description: entry.description, type: entry.type, date: dayjs().format('DD/MM') })
+        console.log({ token, value: entry.value, description: entry.description, type: entry.type, date: dayjs().format('DD/MM') })
+        res.status(201).send('Movimentação registrada com sucesso!');
+    } catch (err) {
+        res.status(500).send('Algo deu errado. Tente novamente!');
+    }
+
+})
 
 const PORT = process.env.PORT;
 app.listen(PORT);

@@ -17,13 +17,13 @@ const newUserSchema = Joi.object({
         .required(),
     password: Joi.string()
         .required()
-        .regex(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/)//Minimum eight characters, at least one letter, one number and one special character
+        .regex(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/),//Minimum eight characters, at least one letter, one number and one special character
 });
 
 const entrySchema = Joi.object({
     value: Joi.string()
         .required()
-        .regex(/^\$?\d+(,\d{3})*(\.\d*)?$/),
+        .regex(/^R\$(\d{1,3}(\.\d{3})*|\d+)(\,\d{2})?$/),
     description: Joi.string()
         .required(),
     type: Joi.string()
