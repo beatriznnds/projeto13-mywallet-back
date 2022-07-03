@@ -7,10 +7,12 @@ export async function createUser(req, res) {
     const user = req.body;
     const { error } = newUserSchema.validate(user);
     if (error) {
+        console.log(error)
         return res.sendStatus(422);
     }
     try {
         const encryptedPassword = bcrypt.hashSync(user.password, 10);
+        console.log(user.password)
         await db.collection('users').insertOne({ ...user, password: encryptedPassword });
         res.status(201).send('Usuário criado com sucesso!')
     } catch (err) {
@@ -23,17 +25,20 @@ export async function getUser (req, res) {
     const { error } = userSchema.validate(user);
     if (error) {
         return res.sendStatus(422);
+        console.log(error)
     }
     try {
         const oldUser = await db.collection('users').findOne({ email: user.email });
         const checkPassword = bcrypt.compareSync(user.password, oldUser.password);
         if (!oldUser || !checkPassword) {
             return res.status(404).send('Email ou senha incorretos!')
+            console.log(user.password)
         }
         const token = uuid();
         await db.collection('onlineUsers').insertOne({ token, userId: new objectId(oldUser._id)});
         res.status(201).send({ token, name: oldUser.name });
     } catch (err) {
+        console.log(err)
         res.status(500).send('Algo deu errado. Tente novamente!');
     }
 }
