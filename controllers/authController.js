@@ -34,7 +34,6 @@ export async function getUser (req, res) {
         await db.collection('onlineUsers').insertOne({ token, userId: new objectId(oldUser._id)});
         res.status(201).send({ token, name: oldUser.name });
     } catch (err) {
-        console.log(err)
         res.status(500).send('Algo deu errado. Tente novamente!');
     }
 }
